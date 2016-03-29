@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>DOODLE Maison</title>
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans:100,300,400,700' rel='stylesheet' type='text/css'>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <script src='https://cdn.firebase.com/js/client/2.2.1/firebase.js'></script>
+
+    <meta name="google-signin-client_id" content="47990806619-ug6isi2m19t121lt2584cfqq3u66t2na.apps.googleusercontent.com">
+      <style>
+        body{
+          font-family: 'open sans', sans-serif;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          align-items: center;
+          margin: 0;
+          color: #333;
+        }
+
+        h1, h2, p{
+          margin: 0;
+        }
+
+        a{
+          font-size: 0.8em;
+        }
+
+        span{
+          font-weight: 300;
+        }
+
+        #doodle {
+          display: flex;
+          flex-direction: column;
+          margin: 50px;
+          min-width: 500px;
+          box-shadow: 0px 0px 18px 0px rgba(0,0,0,0.2);
+          border-radius: 5px;
+        }
+
+        #doodle > div{
+          padding: 10px;
+        }
+
+        #doodle h1{
+          background: url(bg3.jpeg) no-repeat;
+          background-position: center;
+          background-size: cover;
+          border-radius: 5px 5px 0 0;
+          font-size: 1.6em;
+          padding: 30px;
+          text-align: center;
+          color: white;
+        }
+
+        #doodle h2{
+          margin: 10px;
+          font-size: 1em;
+        }
+
+        #doodle form{
+          display: flex;
+        }
+
+        #doodle input[type="text"]{
+          outline: none;
+          border: none;
+          border-bottom: 1px solid #ddd;
+          padding: 10px;
+          margin-bottom: 10px;
+          width: 100%;
+          font-size: 1em;
+          color: #3498db;
+        }
+
+        #doodle input[type="text"]:focus{
+          border-bottom: 1px solid #3498db;
+        }
+
+        #doodle input[type="checkbox"]{
+          margin: 0 10px 0 10px;
+        }
+
+        #afaire, #faites{
+          border-bottom: 1px solid #f7f7f7;
+        }
+
+        #afaire div, #faites div{
+          display: flex;
+          align-items: center;
+        }
+
+        #afaire div > div, #faites div > div{
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          width: 100%;
+          cursor: pointer;
+        }
+
+        #afaire div:hover, #faites div:hover{
+          background-color: #f7f7f7;
+        }
+
+        #afaire div > div p{
+          padding: 5px;
+        }
+
+        .hide_delete{
+          color: #ddd;
+          visibility: hidden;
+          margin-left: 10px;
+        }
+
+        #content > a:last-child{
+          display: flex;
+          justify-content: flex-end;
+          align-items: center;
+          text-decoration: none;
+          color: #ddd;
+          padding-top: 10px;
+        }
+      </style>
+  </head>
+
+
+  <body>
+
+    <div class="g-signin2" data-onsuccess="onSignIn" style="z-index:1000;"></div>
+
+    <div id="doodle">
+      <h1>DOODLE <span>Maison</span></h1>
+      <div id="content">
+        <form id="formulaire">
+          <input type='text' id='saisie' placeholder="Saisissez une tâche à faire">
+        </form>
+        <div id="afaire">
+          <h2>Tâches à faire:</h2>
+        </div>
+        <div id="faites">
+          <h2>Tâches faites:</h2>
+        </div>
+        <a href="#" id="deletAll">Supprimer toutes les tâches<i class="material-icons">delete</i></a>
+      </div>
+    </div>
+
+      <script>
+
+      function onSignIn(googleUser) {
+        var profile = googleUser.getBasicProfile();
+        console.log('ID: ' + profile.getId()); // Do not send to your backend! Use an ID token instead.
+        console.log('Name: ' + profile.getName());
+        console.log('Image URL: ' + profile.getImageUrl());
+        console.log('Email: ' + profile.getEmail());
+
+        startApp()
+      };
+
+      function startApp(){
+          var myDataRef = new Firebase('https://blazing-heat-8391.firebaseIO.com');
+
+          // Envoyer une tache sur Firebase
+          document.getElementById('formulaire').onsubmit = function(evt){
+              evt.preventDefault();
+              myDataRef.push({
+                  name: document.getElementById('saisie').value,
+                  done: false
+              });
+          };
+
+          myDataRef.on('child_added', function(snapshot) {
+
+              // Remet le champs de saisie a zéro
+              var champsInput = document.getElementById('saisie');
+              champsInput.value = '';
+
+              var taches = snapshot.val();
+              var afaire = document.getElementById('afaire');
+              var faites = document.getElementById('faites');
+
+              // Créer une div avec l'id de snapshot.key dans l'élément id=afaire
+              var div = document.createElement("DIV");
+              var div2 = document.createElement("DIV");
+              afaire.appendChild(div);
+
+              // Créer un input type checkbox
+              var type = document.createAttribute("type");
+              var checkBox = document.createElement("INPUT");
+              div.appendChild(checkBox);
+              checkBox.setAttributeNode(type);
+              type.value = 'checkbox';
+
+                  // Créer une div dans la div créée précédement
+                  div.appendChild(div2);
+
+                      //Créer un p avec la valeur du champs saisie
+                      var p = document.createElement("P");
+                      var text = document.createTextNode(taches.name);
+                      var idkey = document.createAttribute("id");
+                      div2.appendChild(p);
+                      p.appendChild(text);
+                      div2.setAttributeNode(idkey);
+                      idkey.value = snapshot.key();
+
+                      // Créer un a avec un enfant i_materialIcon
+                      var materialIcon = document.createElement("I");
+                      var textMaterialIcon = document.createTextNode("delete_forever");
+                      var classMaterialIcon = document.createAttribute("class");
+                      div2.appendChild(materialIcon);
+                      materialIcon.setAttributeNode(classMaterialIcon);
+                      classMaterialIcon.value = 'material-icons hide_delete';
+                      materialIcon.appendChild(textMaterialIcon);
+
+
+              // Au clic sur un élément avec l'id de snapshot.key, ce dernier se supprime de Firebase et du DOM;
+              document.getElementById(idkey.value).onclick = function(){
+                  this.parentNode.remove();
+                  myDataRef.child(snapshot.key()).remove();
+              };
+
+
+              // afficher le materialicon
+              document.getElementById(idkey.value).addEventListener("mouseenter", function(){
+                  document.getElementById(snapshot.key()).childNodes[1].style.visibility = "visible";
+              });
+              document.getElementById(idkey.value).addEventListener("mouseleave", function(){
+                  document.getElementById(snapshot.key()).childNodes[1].style.visibility = "hidden";
+              });
+
+
+              // Supprimer le base de donnée
+              document.getElementById('deletAll').onclick = function (){
+                  if (confirm("Tout supprimer ?")){
+                      myDataRef.remove();
+                      window.location.reload();
+                  };
+              };
+
+
+              // Changer l'état de la tache dans Firebase
+              var dbTache = new Firebase("https://blazing-heat-8391.firebaseIO.com/" + snapshot.key());
+              var el = document.getElementById(snapshot.key()).parentNode;
+
+              checkBox.onclick = function(){
+                  dbTache.update({ done: this.checked });
+              };
+              if (taches.done) {
+                  faites.appendChild(el);
+              } else {
+                  afaire.appendChild(el);
+              };
+          });
+
+          // En fonction de l'état de la tache, elle sera placée dans un div ou dans l'autre
+          myDataRef.on('child_changed', function(snapshot) {
+              var el = document.getElementById(snapshot.key()).parentNode;
+              if (snapshot.val().done) {
+                  faites.appendChild(el);
+              } else {
+                  afaire.appendChild(el);
+              }
+          });
+        };
+
+    </script>
+    <script src="https://apis.google.com/js/platform.js"></script>
+  </body>
+</html>
